@@ -1,0 +1,19 @@
+Package: itfapi
+Type: Package
+Title: ITF Web APIs
+Version: 0.1.0
+Author: Will Forbes
+Description: Easily call ITF web APIs and return list objects
+License: none
+Encoding: UTF-8
+LazyData: true
+Imports:
+  dplyr,
+  httr,
+  jsonlite,
+  purrr,
+  stringr,
+  tibble,
+  tidyr,
+  xml2
+RoxygenNote: 7.0.2
