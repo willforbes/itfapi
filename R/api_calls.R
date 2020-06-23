@@ -18,15 +18,15 @@ get_tournaments <- function(circuit, start_date, days) {
                           "dateFrom=", start_date, "&dateTo=", end_date,
                           "&indoorOutdoor=&categories=&isOrderAscending=true&orderField=startDate&surfaceCodes=")
   ret_object <- NULL
-  server_response <- GET(addr_calendar)
-  api_output <- content(server_response, "text")
+  server_response <- httr::GET(addr_calendar)
+  api_output <- httr::content(server_response, "text")
 
   if(server_response$status_code < 400) {
     if (response_type(api_output) == "json") {
-      ret_object <- fromJSON(addr_calendar, flatten = TRUE)[["items"]]
+      ret_object <- jsonlite::fromJSON(addr_calendar, flatten = TRUE)[["items"]]
     } else if (response_type(api_output) == "xml") {
-      ret_object <- as_tibble(as_list(read_xml(api_output))[[1]]) %>%
-        unnest_wider(Items) %>% unnest(cols = names(.))
+      ret_object <- tibble::as_tibble(as.list(xml2::read_xml(api_output))[[1]]) %>%
+        tidyr::unnest_wider(Items) %>% tidyr::unnest(cols = names(.))
     }
   } else {
     stop(paste0("Server error code: ", server_response$status_code))
@@ -49,15 +49,15 @@ get_event_filters <- function(key) {
   addr_event <- paste0("https://www.itftennis.com/Umbraco/Api/TournamentApi/GetEventFilters?",
                        "tournamentKey=", key)
 
-  server_response <- GET(addr_event)
-  api_output <- content(server_response, "text")
+  server_response <- httr::GET(addr_event)
+  api_output <- httr::content(server_response, "text")
   ret_object <- NULL
 
   if(server_response$status_code < 400) {
     if (response_type(api_output) == "json") {
-      ret_object <- fromJSON(api_output, flatten = TRUE)
+      ret_object <- jsonlite::fromJSON(api_output, flatten = TRUE)
     } else if (response_type(api_output) == "xml") {
-      ret_object <- as_list(read_xml(api_output))
+      ret_object <- as.list(xml2::read_xml(api_output))
     }
   } else {
     stop(paste0("Server error code: ", server_response$status_code))
@@ -85,16 +85,16 @@ get_event_filters <- function(key) {
 #'   playerTypeCode: "M"
 #' ))
 get_draw_sheet <- function(parameters_list) {
-  server_response <- POST(
+  server_response <- httr::POST(
     "https://www.itftennis.com/Umbraco/Api/TournamentApi/GetDrawsheet",
     body = parameters_list,
     encode = "json"
   )
-  api_output <- content(server_response, "text")
+  api_output <- httr::content(server_response, "text")
 
   ret_object <- NULL
   if(server_response$status_code < 400) {
-    parameters_list[["draw_sheet"]] <- fromJSON(api_output, flatten = TRUE)
+    parameters_list[["draw_sheet"]] <- jsonlite::fromJSON(api_output, flatten = TRUE)
   }else {
     stop(paste0("Server error code: ", server_response$status_code))
   }
@@ -116,8 +116,10 @@ get_draw_sheet <- function(parameters_list) {
 #' @examples
 #' get_tournaments("WCT", "2020-01-01", 31)
 get_tournaments_with_draw_sheet <- function(circuit, start_date, days) {
-  get_tournaments(circuit, start_date, days) %>% mutate(tourn_filter = map(tournamentKey, function(x)
-    get_event_filters(x))) %>% mutate(tourn_filter = map(tourn_filter, function(x) {
+  get_tournaments(circuit, start_date, days) %>%
+    dplyr::mutate(tourn_filter = purrr::map(tournamentKey, function(x)
+      get_event_filters(x))) %>%
+    dplyr::mutate(tourn_filter = purrr::map(tourn_filter, function(x) {
       filters_to_list((x$filters),
                       up_list = list(
                         tourType = x$tourType,
@@ -125,6 +127,7 @@ get_tournaments_with_draw_sheet <- function(circuit, start_date, days) {
                         weekNumber = 0
                       )
       )
-    })) %>% unnest(tourn_filter) %>% mutate(draw_sheet = map(tourn_filter, get_draw_sheet))
+    })) %>% tidyr::unnest(tourn_filter) %>%
+    dplyr::mutate(draw_sheet = purrr::map(tourn_filter, get_draw_sheet))
 
 }

@@ -7,9 +7,9 @@
 #' @examples
 #' response_type ("<xml></xml>")
 response_type <- function(resp) {
-  if(str_sub(resp, 1, 1) == "{") {
+  if(stringr::str_sub(resp, 1, 1) == "{") {
     return("json")
-  }else if(str_sub(resp, 1, 1) == "<") {
+  }else if(stringr::str_sub(resp, 1, 1) == "<") {
     return("xml")
   }else {
     return("")
