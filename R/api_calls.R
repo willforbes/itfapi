@@ -120,13 +120,17 @@ get_tournaments_with_draw_sheet <- function(circuit, start_date, days) {
     dplyr::mutate(tourn_filter = purrr::map(tournamentKey, function(x)
       get_event_filters(x))) %>%
     dplyr::mutate(tourn_filter = purrr::map(tourn_filter, function(x) {
-      filters_to_list((x$filters),
-                      up_list = list(
-                        tourType = x$tourType,
-                        tournamentId = x$tournamentId,
-                        weekNumber = 0
-                      )
-      )
+      if (length(x$filters) > 0) {
+        filters_to_list((x$filters),
+                        up_list = list(
+                          tourType = x$tourType,
+                          tournamentId = x$tournamentId,
+                          weekNumber = 0
+                        )
+        )
+      }else {
+        NULL
+      }
     })) %>% tidyr::unnest(tourn_filter) %>%
     dplyr::mutate(draw_sheet = purrr::map(tourn_filter, get_draw_sheet))
 
